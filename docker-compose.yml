@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: gosearch_db
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "55432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
+    container_name: gosearch_elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9201:9200"
+      - "9301:9300"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    restart: always
+
+volumes:
+  pg_data:
+  es_data:
