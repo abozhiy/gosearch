@@ -11,13 +11,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestReadUrl(t *testing.T) {
+func TestFetchHTML(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html><body><a href="https://example.com">Example</a></body></html>`))
 	}))
 	defer server.Close()
 
-	body, err := parser.ReadUrl(server.URL)
+	p := parser.New()
+	body, err := p.FetchHTML(server.URL)
 
 	require.NoError(t, err)
 	require.Contains(t, string(body), "Example")
@@ -34,7 +35,8 @@ func TestExtractLinks(t *testing.T) {
 		  </body>
 		</html>`
 
-	links := parser.ExtractLinks([]byte(html))
+	p := parser.New()
+	links := p.ExtractLinks([]byte(html))
 
 	require.Len(t, links, 3)
 
@@ -54,7 +56,8 @@ func TestExtractLinks_IgnoreImages(t *testing.T) {
 	  <a href="https://example.com?label=gen173nr-1BEhVjb3ZpZF8xOV91232xsadib29raW5nX2Zs">Real</a>
 	</body></html>`
 
-	links := parser.ExtractLinks([]byte(html))
+	p := parser.New()
+	links := p.ExtractLinks([]byte(html))
 	require.Len(t, links, 1)
 	require.Equal(t, "https://example.com", links[0].Url)
 	require.Equal(t, "Real", links[0].Title)
@@ -79,5 +82,6 @@ func TestGroupLinks(t *testing.T) {
 		},
 	}
 
-	require.ElementsMatch(t, expected, parser.GroupLinks(links))
+	p := parser.New()
+	require.ElementsMatch(t, expected, p.GroupLinks(links))
 }

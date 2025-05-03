@@ -19,7 +19,8 @@ func Perform(url string) {
 	// 	return result
 	// }
 
-	if err := crawler.Scan(url, 2); err != nil {
+	c := crawler.New()
+	if err := c.Scan(url, 2); err != nil {
 		panic(err)
 	}
 }

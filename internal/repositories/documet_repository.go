@@ -1,4 +1,4 @@
-package document_repository
+package repositories
 
 import (
 	"fmt"
@@ -8,16 +8,32 @@ import (
 
 	"gosearch/internal/global"
 	"gosearch/internal/types"
+
+	"gorm.io/gorm"
 )
 
 type DocumentRepository interface {
-	FindByURL(url string) (*models.Document, error)
-	Save(doc *models.Document) error
-	FindOrCreate(body []uint8, lg *types.LinkGrouped, level int) error
+    Creator
 }
 
-func FindOrCreate(body []uint8, lg *types.LinkGrouped, level int) error {
-	db := global.Container.DB
+type documentRepo struct {
+	db *gorm.DB
+}
+
+func NewDocumentRepository() *documentRepo {
+	return &documentRepo{db: global.Container.DB}
+}
+
+func (repo *documentRepo) FindOrCreate(body []byte, attrs map[string]any, level int) error {
+	raw, ok := attrs["lg"]
+	if !ok {
+		return fmt.Errorf("lg key not found")
+	}
+
+	lg, ok := raw.(*types.LinkGrouped)
+	if !ok {
+		return fmt.Errorf("lg has wrong type")
+	}
 
 	url := lg.Url
 	title := strings.Join(lg.Titles, ", ")
@@ -29,7 +45,7 @@ func FindOrCreate(body []uint8, lg *types.LinkGrouped, level int) error {
 		Level: level,
 	}
 
-	err := db.Where(models.Document{URL: url, Title: title}).FirstOrCreate(&doc).Error
+	err := repo.db.Where(models.Document{URL: url, Title: title}).FirstOrCreate(&doc).Error
 	if err != nil {
 		return fmt.Errorf("failed to create document > %w", err)
 	}

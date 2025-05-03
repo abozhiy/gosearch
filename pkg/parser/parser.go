@@ -13,16 +13,22 @@ import (
 	"gosearch/internal/types"
 )
 
-type DocumentParser interface {
-	ReadUrl(url string) ([]uint8, error)
-	ExtractLinks(resp []uint8) []types.Link
+type Parser interface {
+	FetchHTML(url string) ([]byte, error)
+	ExtractLinks(resp []byte) []types.Link
 	GroupLinks(links []types.Link) []types.LinkGrouped
 }
 
-func ReadUrl(url string) ([]uint8, error) {
+type HTMLparser struct {}
+
+func New() *HTMLparser {
+	return &HTMLparser{}
+}
+
+func (p *HTMLparser) FetchHTML(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("while geting request (%v)  > %w", url, err)
+		return nil, fmt.Errorf("GET %q failed > %w", url, err)
 	}
 	defer resp.Body.Close()
 
@@ -34,7 +40,7 @@ func ReadUrl(url string) ([]uint8, error) {
 	return body, nil
 }
 
-func ExtractLinks(resp []uint8) []types.Link {
+func (p *HTMLparser) ExtractLinks(resp []byte) []types.Link {
 	var links []types.Link
 
 	doc, err := html.Parse(strings.NewReader(string(resp)))
@@ -62,7 +68,7 @@ func ExtractLinks(resp []uint8) []types.Link {
 	return links
 }
 
-func GroupLinks(links []types.Link) []types.LinkGrouped {
+func (p *HTMLparser) GroupLinks(links []types.Link) []types.LinkGrouped {
 	urlTitlesSet := make(map[string]map[string]bool)
 
 	for _, link := range links {
